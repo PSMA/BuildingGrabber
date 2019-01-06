@@ -1,3 +1,5 @@
 click
 shapely
 geojson
+pyproj
+requests

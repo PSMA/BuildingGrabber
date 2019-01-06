@@ -5,6 +5,8 @@ import os
 import sys
 import time
 from functools import partial
+from pathlib import Path
+import subprocess
 
 import click
 
@@ -17,8 +19,6 @@ from shapely.geometry import (LineString, MultiPoint, MultiPolygon, Point,
                               mapping, shape)
 from shapely.ops import transform
 
-api_key = ''
-
 @click.command(
     help='Takes a geojson file and returns a new geojson file with all the building footprints'
 )
@@ -26,17 +26,17 @@ api_key = ''
     help='Your PSMA API key'
 )
 @click.option("--in_file", "-i",
-    help='The input hgeojson file'
+    help='The input  geojson file'
 )
 def estimate(key, in_file):
     start = time.time()
 
-    api_key = key    
+    in_file_path = Path('/app/data/').joinpath(in_file)
 
-    points = get_points(in_file)
+    points = get_points(in_file_path)
     points = filter_quadratic(points, by_distance)
 
-    building_ids = get_building_ids(points)
+    building_ids = get_building_ids(points, key)
 
     print(f"Total number of buildings returned: {len(building_ids)}")
     
@@ -68,20 +68,19 @@ def estimate(key, in_file):
 def run(key, in_file, out_file, footprint_type, attribute):
     start = time.time()
 
-    api_key = key    
+    in_file_path = Path('/app/data/').joinpath(in_file)
 
-    points = get_points(in_file)
+    points = get_points(in_file_path)
     points = filter_quadratic(points, by_distance)
 
-    building_ids = get_building_ids(points)
+    building_ids = get_building_ids(points, key)
 
     building_features = []
     counter = 1
-    print(f"Total BuildingFootprints: {len(building_ids)}")
     for building_id in building_ids:
         # print(f"{counter} - {len(building_ids)}")
         counter += 1
-        building_footprint, b_attributes = get_building_footprint(building_id, footprint_type == '2d', attribute)
+        building_footprint, b_attributes = get_building_footprint(building_id, key, footprint_type == '2d', attribute)
         f = geojson.Feature(building_id,building_footprint,b_attributes)
         building_features.append(f)
 
@@ -98,14 +97,14 @@ def get_points(in_file):
 
     return get_query_points_from_geojson_features(gj.features)
 
-def get_building_ids(points):
+def get_building_ids(points, api_key):
     buildings = []
     counter = 1
-    print(f"Total Points: {len(points)}")
+    print(f"Total Filtered Points: {len(points)}")
     for point in points:
-        print(f"{counter} - {len(points)}")
+        print(f"{counter} - {len(points)}", end='\r', flush=True)
         counter += 1
-        for building_id in get_building_ids_for_point(point):
+        for building_id in get_building_ids_for_point(point, api_key):
             if building_id not in buildings:
                 buildings.append(building_id)
     return buildings
@@ -136,7 +135,7 @@ def reproject_wgs84_gda94(point):
         pyproj.Proj(init='epsg:4283')) # destination coordinate system
     return transform(project, point) 
 
-def get_building_ids_for_point(point):
+def get_building_ids_for_point(point, api_key):
     url = "https://api.psma.com.au/beta/v1/buildings/"
     headers = {'authorization': api_key}
     params = {
@@ -148,8 +147,7 @@ def get_building_ids_for_point(point):
     data = json.loads(response.text)['data']
     return [x['buildingId'] for x in data]
 
-
-def get_building_footprint(buildingId, get_2d=True, attributes=[]):
+def get_building_footprint(buildingId, api_key, get_2d=True, attributes=[]):
     if get_2d:
         footprint_type = 'footprint2d'
     else:
@@ -208,7 +206,7 @@ def get_query_points_from_geojson_features(features):
 def filter_quadratic(data,condition):
     result = []
     count = 0
-    print(f"Total: {len(data)}")
+    print(f"Total Points Generated: {len(data)}")
     for element in data:
         count += 1
         if count%500 == 0:

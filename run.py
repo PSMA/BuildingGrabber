@@ -10,15 +10,26 @@ def build_container():
 
 
 def run_command(run_cmd, source_directory):
-    current_path = Path.joinpath(Path.cwd(), "src")
     os.system('docker run --rm -t '
-        f'-v "{current_path}:/app" '
-        f'-v "{source_directory}:/data" '
+        f'-v "{Path.cwd()}:/app" '
+        f'-v "{source_directory}:/app/data" '
         f'psma_api_tools '
         f'{run_cmd}')
+
+        
+@click.command(
+    help='Open BASH on the docker container'
+    )
+def docker_bash():
+    os.system('docker run --rm -it '
+        f'-v "{Path.cwd()}:/app" '
+        f'psma_api_tools '
+        f'/bin/bash')
     
 
-@click.command()
+@click.command(
+    help='Pulls buildings from the PSMA Buildings API based on the input geojson file.'
+    )
 @click.option("--key", "-k",
     help='Your PSMA API key',
     required=True
@@ -28,7 +39,7 @@ def run_command(run_cmd, source_directory):
     required=True
 )
 @click.option("--out_file", "-o",
-    help='The output geojson file',
+    help='The output geojson file, which will be saved in the same location as the input file',
     required=True
 )
 @click.option('--footprint_type', '-ft', 
@@ -38,7 +49,7 @@ def run_command(run_cmd, source_directory):
 @click.option('--attribute', '-a', 
     help='Any other building attributes that you want to grab',
     multiple=True)
-def test2(key, in_file, out_file, footprint_type, attribute):
+def grab_buildings(key, in_file, out_file, footprint_type, attribute):
     in_file_path = Path(in_file).resolve()
 
     do_quit = False
@@ -48,7 +59,7 @@ def test2(key, in_file, out_file, footprint_type, attribute):
 
     docker_data_dir = Path("/data/")
     docker_in_file = docker_data_dir.joinpath(in_file_path.name)
-    cmd = "python /src/BuildingGrabber.py "
+    cmd = "python BuildingGrabber.py run "
     cmd += f"-k {key} "
     cmd += f"-i {docker_in_file} "
     cmd += f"-o {out_file} "
@@ -57,13 +68,41 @@ def test2(key, in_file, out_file, footprint_type, attribute):
         cmd += f"-a {attr} "
     
     run_command(cmd, in_file_path.parent)
+    
+
+@click.command(
+    help='Estimates the number of buildings that would be pulled from the PSMA Buildings API based on the input geojson file.'
+    )
+@click.option("--key", "-k",
+    help='Your PSMA API key',
+    required=True
+)
+@click.option("--in_file", "-i",
+    help='The input geojson file',
+    required=True
+)
+def estimate(key, in_file):
+    in_file_path = Path(in_file).resolve()
+
+    do_quit = False
+    if not in_file_path.is_file():
+        print(f"{in_file} is not an actual file!")
+        quit()
+
+    cmd = "python BuildingGrabber.py estimate "
+    cmd += f"-k {key} "
+    cmd += f"-i {in_file_path.name} "
+    
+    run_command(cmd, in_file_path.parent)
 
 @click.group()
 def cli():
     pass
     
 cli.add_command(build_container)
-cli.add_command(test2)
+cli.add_command(grab_buildings)
+cli.add_command(estimate)
+cli.add_command(docker_bash)
 
 if __name__ == "__main__":
     cli()
