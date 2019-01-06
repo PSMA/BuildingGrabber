@@ -1,0 +1,14 @@
+FROM python:3.6.4-stretch
+
+# install system packages
+RUN apt-get update \
+    && apt-get install -y \
+      python3-dev \
+      unzip
+
+# install python packages
+RUN mkdir /app
+COPY ./requirements.txt /app
+RUN pip install -r /app/requirements.txt
+
+WORKDIR /app
