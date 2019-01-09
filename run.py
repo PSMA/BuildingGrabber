@@ -12,7 +12,7 @@ def build_container():
 def run_command(run_cmd, source_directory):
     os.system('docker run --rm -t '
         f'-v "{Path.cwd()}:/app" '
-        f'-v "{source_directory}:/app/data" '
+        f'-v "{source_directory}:/data" '
         f'psma_api_tools '
         f'{run_cmd}')
 
@@ -57,11 +57,9 @@ def grab_buildings(key, in_file, out_file, footprint_type, attribute):
         print(f"{in_file} is not an actual file!")
         quit()
 
-    docker_data_dir = Path("/data/")
-    docker_in_file = docker_data_dir.joinpath(in_file_path.name)
     cmd = "python BuildingGrabber.py run "
     cmd += f"-k {key} "
-    cmd += f"-i {docker_in_file} "
+    cmd += f"-i {in_file_path.name} "
     cmd += f"-o {out_file} "
     cmd += f"-ft {footprint_type} "
     for attr in attribute:

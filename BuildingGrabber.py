@@ -1,23 +1,20 @@
 
 import json
 import math
-import os
 import sys
 import time
 from functools import partial
 from pathlib import Path
-import subprocess
 
 import click
 
 import geojson
-import pyproj
 import requests
-import shapely
 from pyproj import Proj, transform
 from shapely.geometry import (LineString, MultiPoint, MultiPolygon, Point,
                               mapping, shape)
 from shapely.ops import transform
+
 
 @click.command(
     help='Takes a geojson file and returns a new geojson file with all the building footprints'
@@ -31,7 +28,7 @@ from shapely.ops import transform
 def estimate(key, in_file):
     start = time.time()
 
-    in_file_path = Path('/app/data/').joinpath(in_file)
+    in_file_path = Path('/data/').joinpath(in_file)
 
     points = get_points(in_file_path)
     points = filter_quadratic(points, by_distance)
@@ -68,25 +65,19 @@ def estimate(key, in_file):
 def run(key, in_file, out_file, footprint_type, attribute):
     start = time.time()
 
-    in_file_path = Path('/app/data/').joinpath(in_file)
+    in_file_path = Path('/data/').joinpath(in_file)
+    out_file_path = Path('/data/').joinpath(out_file)
 
     points = get_points(in_file_path)
     points = filter_quadratic(points, by_distance)
 
     building_ids = get_building_ids(points, key)
 
-    building_features = []
-    counter = 1
-    for building_id in building_ids:
-        # print(f"{counter} - {len(building_ids)}")
-        counter += 1
-        building_footprint, b_attributes = get_building_footprint(building_id, key, footprint_type == '2d', attribute)
-        f = geojson.Feature(building_id,building_footprint,b_attributes)
-        building_features.append(f)
+    building_features = get_building_footprints(building_ids, key, footprint_type == '2d', attribute)
 
     fc = geojson.FeatureCollection(building_features)
     gj = geojson.dumps(fc) 
-    with open(out_file, 'w') as outfile:
+    with open(out_file_path, 'w') as outfile:
         outfile.write(gj)
     elapsed = time.time() - start
     print(f"Elapsed time: {elapsed}")
@@ -102,7 +93,7 @@ def get_building_ids(points, api_key):
     counter = 1
     print(f"Total Filtered Points: {len(points)}")
     for point in points:
-        print(f"{counter} - {len(points)}", end='\r', flush=True)
+        print(f"{counter} out of {len(points)} points processed.", end='\r', flush=True)
         counter += 1
         for building_id in get_building_ids_for_point(point, api_key):
             if building_id not in buildings:
@@ -130,9 +121,9 @@ def get_ponts_between_points(origin_points, radius=100):
 #But when I pull it down and drop it into anything they both line up.
 def reproject_wgs84_gda94(point):
     project = partial(
-        pyproj.transform,
-        pyproj.Proj(init='epsg:4326'), # source coordinate system
-        pyproj.Proj(init='epsg:4283')) # destination coordinate system
+        transform,
+        Proj(init='epsg:4326'), # source coordinate system
+        Proj(init='epsg:4283')) # destination coordinate system
     return transform(project, point) 
 
 def get_building_ids_for_point(point, api_key):
@@ -147,12 +138,23 @@ def get_building_ids_for_point(point, api_key):
     data = json.loads(response.text)['data']
     return [x['buildingId'] for x in data]
 
+def get_building_footprints(building_ids, key, is_2d_footprint, attributes):
+    building_features = []
+    counter = 1
+    for building_id in building_ids:
+        print(f"Loaded {counter} out of {len(building_ids)} building footprints.", end='\r', flush=True)
+        counter += 1
+        building_footprint, b_attributes = get_building_footprint(building_id, key, is_2d_footprint, attributes)
+        building_features.append(geojson.Feature(building_id,building_footprint,b_attributes))
+    return building_features
+
 def get_building_footprint(buildingId, api_key, get_2d=True, attributes=[]):
     if get_2d:
         footprint_type = 'footprint2d'
     else:
         footprint_type = 'footprint3d'
 
+    attributes = list(attributes)
     attributes.append(footprint_type)
 
     formatted_attribures = ",".join(attributes)
