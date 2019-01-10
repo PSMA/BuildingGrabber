@@ -2,7 +2,7 @@
 
 [![Build Status](https://img.shields.io/badge/version-1.0.0-brightgreen.svg)](https://semver.org/)
 
-Building Grabber is a tool to pull down building footprints and other associated attributes form the PSMA Beta Buildings API.
+Building Grabber is a tool to pull down building footprints and other attributes from the PSMA Beta Buildings API.
 
 ## Requirements
 
@@ -45,7 +45,7 @@ Elapsed time: 14.51s
 
 ### Grab Buildings
 
-`python run.py grab-buildings -k {your beta api key} -i {your source geojson file}`
+`python run.py grab-buildings`
 
 Options:
 - -k, --key TEXT 
