@@ -38,7 +38,7 @@ def estimate(key, in_file):
     print(f"Total number of buildings returned: {len(building_ids)}")
     
     elapsed = time.time() - start
-    print(f"Elapsed time: {elapsed}")
+    print(f"Elapsed time: {elapsed:.2f}s")
     
 @click.command(
     help='Takes a geojson file and returns a new geojson file with all the building footprints'
@@ -77,10 +77,11 @@ def run(key, in_file, out_file, footprint_type, attribute):
 
     fc = geojson.FeatureCollection(building_features)
     gj = geojson.dumps(fc) 
+    print(f"Writing {out_file}")
     with open(out_file_path, 'w') as outfile:
         outfile.write(gj)
     elapsed = time.time() - start
-    print(f"Elapsed time: {elapsed}")
+    print(f"Elapsed time: {elapsed:.2f}s")
 
 def get_points(in_file):
     with open(in_file) as gj_file:
@@ -100,7 +101,7 @@ def get_building_ids(points, api_key):
                 buildings.append(building_id)
     return buildings
 
-def get_ponts_between_points(origin_points, radius=100):
+def get_points_between_points(origin_points, radius=100):
     x = Point(origin_points[0])
     y = Point(origin_points[1])
     mod_radius = radius / 100000
@@ -141,6 +142,7 @@ def get_building_ids_for_point(point, api_key):
 def get_building_footprints(building_ids, key, is_2d_footprint, attributes):
     building_features = []
     counter = 1
+    print(f"Total Buildings: {len(building_ids)}")
     for building_id in building_ids:
         print(f"Loaded {counter} out of {len(building_ids)} building footprints.", end='\r', flush=True)
         counter += 1
@@ -184,22 +186,22 @@ def get_query_points_from_geojson_features(features):
         elif geom.type == "LineString":
             line = geom.coordinates
             for first,last in zip(line,line[1:]):
-                [points.append(p) for p in get_ponts_between_points((first,last))]
+                [points.append(p) for p in get_points_between_points((first,last))]
         elif geom.type == "MultiLineString":
             for line in geom.coordinates:
                 for first,last in zip(line,line[1:]):
-                    [points.append(p) for p in get_ponts_between_points((first,last))]
+                    [points.append(p) for p in get_points_between_points((first,last))]
         elif geom.type == "Polygon":
             print("Currently Polygon only grabs buildings around the boarder defined by the polygon. It also does not take into account holes.")
             poly_border = geom.coordinates[0]
             for first,last in zip(poly_border,poly_border[1:]):
-                [points.append(p) for p in get_ponts_between_points((first,last))]
+                [points.append(p) for p in get_points_between_points((first,last))]
         elif geom.type == "MultiPolygon":
             print("Currently MultiPolygon only grabs buildings around the boarder defined by the polygons. It also does not take into account holes.")
             for geom in geom.coordinates:
                 poly_border = geom[0]
                 for first,last in zip(poly_border,poly_border[1:]):
-                    [points.append(p) for p in get_ponts_between_points((first,last))]
+                    [points.append(p) for p in get_points_between_points((first,last))]
         else:
             print(f"Geometry type {geom.type} not implemented yet")
             

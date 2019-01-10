@@ -2,6 +2,7 @@ import click
 import os
 from pathlib import Path
 
+
 @click.command(
     help='Builds the docker container to be used when running the tools.'
 )
@@ -16,16 +17,6 @@ def run_command(run_cmd, source_directory):
         f'psma_api_tools '
         f'{run_cmd}')
 
-        
-@click.command(
-    help='Open BASH on the docker container'
-    )
-def docker_bash():
-    os.system('docker run --rm -it '
-        f'-v "{Path.cwd()}:/app" '
-        f'psma_api_tools '
-        f'/bin/bash')
-    
 
 @click.command(
     help='Pulls buildings from the PSMA Buildings API based on the input geojson file.'
@@ -100,7 +91,6 @@ def cli():
 cli.add_command(build_container)
 cli.add_command(grab_buildings)
 cli.add_command(estimate)
-cli.add_command(docker_bash)
 
 if __name__ == "__main__":
     cli()
