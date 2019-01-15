@@ -4,6 +4,8 @@
 
 Building Grabber is a tool to pull down building footprints and other attributes from the PSMA Beta Buildings API.
 
+![bb](https://user-images.githubusercontent.com/44757652/51155765-b9233c80-18cc-11e9-98f6-697f6cc405e0.png)
+
 ## Requirements
 
 - A beta API Key [register for the beta here](https://developer.psma.com.au/beta-program)
