@@ -19,7 +19,7 @@ def run_command(run_cmd, source_directory):
 
 
 @click.command(
-    help='Pulls buildings from the PSMA Buildings API based on the input geojson file.'
+    help='Extracts buildings from the PSMA Buildings API based on the input geojson file.'
     )
 @click.option("--key", "-k",
     help='Your PSMA API key',
@@ -40,7 +40,11 @@ def run_command(run_cmd, source_directory):
 @click.option('--attribute', '-a', 
     help='Any other building attributes that you want to grab',
     multiple=True)
-def grab_buildings(key, in_file, out_file, footprint_type, attribute):
+@click.option('--radius', '-r', 
+    help='The radius to search around the geojson features',
+    default=50,
+    type=click.IntRange(1, 100, clamp=True))
+def extract(key, in_file, out_file, footprint_type, attribute, radius):
     in_file_path = Path(in_file).resolve()
 
     do_quit = False
@@ -48,13 +52,15 @@ def grab_buildings(key, in_file, out_file, footprint_type, attribute):
         print(f"{in_file} is not an actual file!")
         quit()
 
-    cmd = "python BuildingGrabber.py run "
+    cmd = "python docker_run.py extract "
     cmd += f"-k {key} "
     cmd += f"-i {in_file_path.name} "
     cmd += f"-o {out_file} "
     cmd += f"-ft {footprint_type} "
     for attr in attribute:
         cmd += f"-a {attr} "
+        
+    cmd += f"-r {radius} "
     
     run_command(cmd, in_file_path.parent)
     
@@ -70,7 +76,11 @@ def grab_buildings(key, in_file, out_file, footprint_type, attribute):
     help='The input geojson file',
     required=True
 )
-def estimate(key, in_file):
+@click.option('--radius', '-r', 
+    help='The radius to search around the geojson features',
+    default=50,
+    type=click.IntRange(1, 100, clamp=True))
+def estimate(key, in_file, radius):
     in_file_path = Path(in_file).resolve()
 
     do_quit = False
@@ -78,9 +88,10 @@ def estimate(key, in_file):
         print(f"{in_file} is not an actual file!")
         quit()
 
-    cmd = "python BuildingGrabber.py estimate "
+    cmd = "python docker_run.py estimate "
     cmd += f"-k {key} "
     cmd += f"-i {in_file_path.name} "
+    cmd += f"-r {radius} "
     
     run_command(cmd, in_file_path.parent)
 
@@ -88,9 +99,14 @@ def estimate(key, in_file):
 def cli():
     pass
     
+@click.command()
+@click.option('--n', default=1)
+def dots(n):
+    click.echo('.' * n)
 cli.add_command(build_container)
-cli.add_command(grab_buildings)
+cli.add_command(extract)
 cli.add_command(estimate)
+cli.add_command(dots)
 
 if __name__ == "__main__":
     cli()
