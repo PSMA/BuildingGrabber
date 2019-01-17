@@ -47,7 +47,7 @@ Total number of buildings returned: 730
 Elapsed time: 14.51s
 ```
 
-### Grab Buildings
+### Extract
 
 `python run.py extract`
 
