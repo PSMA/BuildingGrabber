@@ -70,7 +70,7 @@ This runs the source geojson and saves a geojson file. This file will contain a 
 #### Example
 
 ```
-python .\run.py grab-buildings -k keykeykey -i C:\data\test.geojson -o testoutput.geojson -ft 2d -a elevation -a swimmingPool -a solarPanel -r 70
+python .\run.py extract -k keykeykey -i C:\data\test.geojson -o testoutput.geojson -ft 2d -a elevation -a swimmingPool -a solarPanel -r 70
 
 Total Points Generated: 79
 Total Filtered Points: 56
