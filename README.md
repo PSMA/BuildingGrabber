@@ -1,6 +1,6 @@
 # Building Grabber
 
-[![Build Status](https://img.shields.io/badge/version-1.0.0-brightgreen.svg)](https://semver.org/)
+[![Build Status](https://img.shields.io/badge/version-2.0.0-brightgreen.svg)](https://semver.org/)
 
 Building Grabber is a tool to pull down building footprints and other attributes from the PSMA Beta Buildings API.
 
@@ -31,13 +31,15 @@ Options:
   - Your PSMA API key  [required]
 - -i, --in_file TEXT
   - The input geojson file  [required]
+- -r, --radius INTEGER
+  - The radius to search around the geojson features
 
 This runs the source geojson and returns an estimate of the number of buildings a full run would return.
 
 #### Example
 
 ```
-python run.py estimate -k keykeykeykey -i C:\data\test.geojson
+python run.py estimate -k keykeykeykey -i C:\data\test.geojson -r 100
 
 Total Points Generated: 79
 Total Filtered Points: 56
@@ -47,7 +49,7 @@ Elapsed time: 14.51s
 
 ### Grab Buildings
 
-`python run.py grab-buildings`
+`python run.py extract`
 
 Options:
 - -k, --key TEXT 
@@ -60,13 +62,15 @@ Options:
   - Do you want the 2D or 3D footprint [required]
 - -a, --attribute TEXT
   - Any other building attributes that you want to return with the footprint
+- -r, --radius INTEGER
+  - The radius to search around the geojson features
                                  
 This runs the source geojson and saves a geojson file. This file will contain a feature class with each feature being a building's footprint and attributes.
 
 #### Example
 
 ```
-python .\run.py grab-buildings -k keykeykey -i C:\data\test.geojson -o testoutput.geojson -ft 2d -a elevation -a swimmingPool -a solarPanel
+python .\run.py grab-buildings -k keykeykey -i C:\data\test.geojson -o testoutput.geojson -ft 2d -a elevation -a swimmingPool -a solarPanel -r 70
 
 Total Points Generated: 79
 Total Filtered Points: 56
